@@ -3,6 +3,7 @@
 namespace Hacfi\Bundle\DeployBundle\Command;
 
 
+use Hacfi\Bundle\DeployBundle\Entity\Repository;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,6 +14,8 @@ use Symfony\Component\Process\Process;
 
 class ReleaseCreateCommand extends ContainerAwareCommand
 {
+    protected $repositories;
+
     protected function configure()
     {
         $this
@@ -41,7 +44,7 @@ class ReleaseCreateCommand extends ContainerAwareCommand
         $repository = $this->validateRepository($input->getOption('repository'));
 
         if (!$repository) {
-            $output->writeln('<error>You must insert a package name</error>');
+            $output->writeln('<error>You must insert a repo name</error>');
 
             return 1;
         }
@@ -49,9 +52,9 @@ class ReleaseCreateCommand extends ContainerAwareCommand
         $output->writeln(sprintf('<info>Creating release for repository "%s"...</info>', $repository));
 
 
-        $dataDir = realpath($this->getContainer()->get('kernel')->getRootDir().'/..').'/data/';
+        $dataDir   = realpath($this->getContainer()->get('kernel')->getRootDir().'/..').'/data/';
         $vendorDir = $dataDir.'vendor/';
-        $repoDir = $dataDir.$repository.'/';
+        $repoDir   = $dataDir.$repository.'/';
 
         $gitDir = $repoDir.'git/';
 
@@ -73,11 +76,11 @@ class ReleaseCreateCommand extends ContainerAwareCommand
 
         if (!$filesystem->exists($gitDir)) {
             // clone here
-            $output->writeln('<error>Repository not cloned yet..aborting</error>');
+            $output->writeln('<info>Repository not cloned yet..cloning</info>');
 
-            $source = 'git@github.com:hacfi/---.git';
+            $repoEntity = $this->getRepository($repository);
 
-            $gitProcess = new Process(sprintf('git clone --bare %s %s', $source, $gitDir));
+            $gitProcess = new Process(sprintf('git clone --bare %s %s', $repoEntity->getUrl(), $gitDir));
             $gitProcess->setTimeout(900);
 
             $gitProcess->run(
@@ -89,7 +92,6 @@ class ReleaseCreateCommand extends ContainerAwareCommand
                     }
                 }
             );
-
 //            return 1;
         }
 
@@ -217,7 +219,18 @@ class ReleaseCreateCommand extends ContainerAwareCommand
             )
         );
 
-        $repositories = array('kis', 'gr');
+        $repo = new Repository();
+        $repo
+            ->setName('test')
+            ->setUrl('git@github.com:hacfi/Deployment.git');
+
+
+        $em = $this->getContainer()->get('doctrine')->getManager();
+        $em->persist($repo);
+        $em->flush();
+
+        $repositories = array_keys($this->getRepositories());
+
         $output->writeln('<info>Available:</info>');
         $output->writeln(array_values($repositories));
         $output->writeln('');
@@ -258,12 +271,50 @@ class ReleaseCreateCommand extends ContainerAwareCommand
 
     public function validateRepository($value)
     {
-        $b = $this->getContainer()->get('kernel');
+        $repositories = array_keys($this->getRepositories());
 
-        if (false) { // @TODO: Validate
+        if (!in_array($value, $repositories)) {
             throw new \InvalidArgumentException(sprintf('Repository "%s" was not found', $value));
         }
 
         return $value;
+    }
+
+
+    public function getRepository($name)
+    {
+        if (null !== $this->repositories) {
+            return $this->repositories[$name];
+        }
+
+        $this->getRepositories();
+
+        return $this->getRepository($name);
+    }
+
+
+    public function getRepositories()
+    {
+        if (null !== $this->repositories) {
+            return $this->repositories;
+        }
+
+        $repositories = array();
+
+        $repos = $this->getContainer()
+            ->get('doctrine')->getManager()
+            ->getRepository('HacfiDeployBundle:Repository')
+            ->findBy(
+                array(),
+                array('name' => 'asc')
+            );
+
+        foreach ($repos as $repositoryEntity) {
+            $repositories[$repositoryEntity->getName()] = $repositoryEntity;
+        }
+
+        $this->repositories = $repositories;
+
+        return $this->repositories;
     }
 }

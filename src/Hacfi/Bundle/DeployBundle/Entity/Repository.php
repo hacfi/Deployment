@@ -35,10 +35,15 @@ class Repository
     private $updatedAt;
 
 
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime();
+        $this->updatedAt = new \DateTime();
+    }
+
     /**
-     * Get id
-     *
-     * @return integer 
+     * @return integer
      */
     public function getId()
     {
@@ -46,22 +51,18 @@ class Repository
     }
 
     /**
-     * Set name
-     *
      * @param string $name
      * @return Repository
      */
     public function setName($name)
     {
         $this->name = $name;
-    
+
         return $this;
     }
 
     /**
-     * Get name
-     *
-     * @return string 
+     * @return string
      */
     public function getName()
     {
@@ -69,22 +70,18 @@ class Repository
     }
 
     /**
-     * Set url
-     *
      * @param string $url
      * @return Repository
      */
     public function setUrl($url)
     {
         $this->url = $url;
-    
+
         return $this;
     }
 
     /**
-     * Get url
-     *
-     * @return string 
+     * @return string
      */
     public function getUrl()
     {
@@ -92,22 +89,18 @@ class Repository
     }
 
     /**
-     * Set createdAt
-     *
      * @param \DateTime $createdAt
      * @return Repository
      */
     public function setCreatedAt($createdAt)
     {
-        $this->createdAt = $createdAt;
-    
+        $this->createdAt = $createdAt instanceof \DateTime ? $createdAt : new \DateTime();
+
         return $this;
     }
 
     /**
-     * Get createdAt
-     *
-     * @return \DateTime 
+     * @return \DateTime
      */
     public function getCreatedAt()
     {
@@ -115,22 +108,18 @@ class Repository
     }
 
     /**
-     * Set updatedAt
-     *
      * @param \DateTime $updatedAt
      * @return Repository
      */
-    public function setUpdatedAt($updatedAt)
+    public function setUpdatedAt(\DateTime $updatedAt = null)
     {
-        $this->updatedAt = $updatedAt;
-    
+        $this->updatedAt = $updatedAt instanceof \DateTime ? $updatedAt : new \DateTime();
+
         return $this;
     }
 
     /**
-     * Get updatedAt
-     *
-     * @return \DateTime 
+     * @return \DateTime
      */
     public function getUpdatedAt()
     {
