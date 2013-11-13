@@ -1,1 +1,1 @@
-../vendor/doctrine/orm/bin/doctrine.php
+../../vendor/doctrine/orm/bin/doctrine.php
